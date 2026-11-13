@@ -201,6 +201,7 @@
       </div>
       <div class="f"><label>Prefijo de numeración</label><input id="e-prefijo" placeholder="COT"></div>
       <div class="f"><label>Mensaje de despedida en el PDF</label><input id="e-gracias"></div>
+      <div class="f"><label>Nota al final de la cotización</label><textarea id="e-nota" rows="2"></textarea></div>
     </div>
     <div class="card">
       <h2>Lista de equipos y servicios</h2>
@@ -239,7 +240,7 @@ const DEF_LOGO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAaQAAAGkCAYAAAB+
 const DEF_EMP = {
   nombre:'Aires Acondicionados Luis Diego', eslogan:'Climatiza tu ambiente', tel:'',
   correo:'', ubic:'Desamparados, San José', web:'', ced:'', color:'#0A2F5C', logoW:420, logoH:420,
-  prefijo:'COT', gracias:'Gracias por su preferencia. Quedamos atentos a cualquier consulta.', logo:DEF_LOGO,
+  prefijo:'COT', gracias:'Gracias por su preferencia. Quedamos atentos a cualquier consulta.', nota:'Precios dados en esta cotización están sujetos a disponibilidad y existencia.', logo:DEF_LOGO,
   servicios:'Aire acondicionado tipo minisplit de 12000 BTU inverter con wifi | \nAire acondicionado tipo minisplit de 18000 BTU inverter con wifi | \nAire acondicionado tipo minisplit de 24000 BTU inverter con wifi | \nAire acondicionado tipo minisplit de 12000 BTU sencillo | \nAire acondicionado tipo minisplit de 18000 BTU sencillo | \nAire acondicionado tipo minisplit de 24000 BTU sencillo | \nAire acondicionado tipo casete de 36000 BTU inverter | \nAire acondicionado tipo casete de 60000 BTU inverter | \nAire acondicionado tipo piso cielo de 60000 BTU inverter | \nAire acondicionado tipo central de 60000 BTU inverter | \nInstalación de equipo de aire acondicionado | \nDesinstalación de equipo de aire acondicionado | \nInstalación y desinstalación de aire acondicionado | \nTraslado de equipo de aire acondicionado | \nInstalación de bomba de condensado | \nInstalación de protector de voltaje | \nMateriales de equipos | \nInstalación de equipos y ductos | \nInstalación y fabricación de ductos | \nRevisión y diagnóstico de aire acondicionado | \nMantenimiento preventivo de aire acondicionado | \nMantenimiento correctivo de aire acondicionado | \nReparación de aire acondicionado | \nReparación de fuga de aire acondicionado | \nCambio de componentes eléctricos de aire acondicionado | \nCarga de refrigerante de aire acondicionado | '
 };
 let emp = Object.assign({}, DEF_EMP, store.get('ald_emp', {}));
@@ -382,7 +383,7 @@ $('limpiar').onclick = ()=>{ nueva(); window.scrollTo(0,0); toast('Cotización n
 
 /* ---------- empresa ---------- */
 function renderEmp(){
-  ['nombre','eslogan','tel','correo','ubic','web','ced','color','prefijo','gracias','servicios'].forEach(k=> $('e-'+k).value = emp[k]||'');
+  ['nombre','eslogan','tel','correo','ubic','web','ced','color','prefijo','gracias','nota','servicios'].forEach(k=> $('e-'+k).value = emp[k]||'');
   const img = $('logo-img'); if(emp.logo){ img.src = emp.logo; img.classList.remove('hidden'); } else img.classList.add('hidden');
   $('hero-logo').src = emp.logo || DEF_LOGO; $('hero-eslogan').textContent = emp.nombre || '';
   document.title = 'Cotizador ' + (emp.nombre||'');
@@ -407,7 +408,7 @@ $('e-logo').onchange = e=>{
 };
 $('quitar-logo').onclick = ()=>{ emp.logo=DEF_LOGO; emp.logoW=420; emp.logoH=420; renderEmp(); toast('Logo original restaurado'); };
 $('guardar-empresa').onclick = ()=>{
-  ['nombre','eslogan','tel','correo','ubic','web','ced','color','prefijo','gracias','servicios'].forEach(k=> emp[k] = $('e-'+k).value.trim());
+  ['nombre','eslogan','tel','correo','ubic','web','ced','color','prefijo','gracias','nota','servicios'].forEach(k=> emp[k] = $('e-'+k).value.trim());
   emp.color = $('e-color').value;
   if(store.set('ald_emp', emp)) toast('Datos guardados'); else toast('Guardado solo por esta sesión');
   renderEmp();
@@ -558,6 +559,19 @@ function buildPDF(q){
       doc.setFont('helvetica','normal'); doc.setTextColor(75,82,94); doc.text(lines, M+28, y);
       y += Math.max(1, lines.length)*4.2 + 2.6;
     });
+  }
+
+  /* Nota final */
+  if(emp.nota){
+    doc.setFont('helvetica','italic'); doc.setFontSize(8.6);
+    const nl = doc.splitTextToSize(emp.nota, W-2*M-8);
+    const nh = nl.length*4.2 + 6;
+    y = Math.max(y + 4, 0);
+    if(y + nh > H-24){ doc.addPage(); y = 25; }
+    doc.setFillColor(...CELS); doc.rect(M, y, W-2*M, nh, 'F');
+    doc.setFillColor(...CEL); doc.rect(M, y, 1.2, nh, 'F');
+    doc.setTextColor(...ACC); doc.text(nl, M+5, y+5.2);
+    y += nh;
   }
 
   /* Pie */
